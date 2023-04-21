@@ -9,6 +9,7 @@ except ImportError:
     import distutils.core as distutools
 
 import os
+import argparse
 
 # My modules
 import prober
@@ -42,17 +43,23 @@ classifiers = ["Development Status :: 5 - Production/Stable",
 license = "http://creativecommons.org/licenses/BSD/"
 keywords = "ipc inter-process communication semaphore shared memory shm message queue"
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+        '--libs',
+        type=str,
+        help="space delimeted string with libraries to link against, the only relevant option should be 'rt'")
+
+lib_override = parser.parse_args().libs
+
 libraries = []
-d = {}
-# do note that setting the env flag SKIP_BUILDSYSTEM_PROBE will require you
-# to generate a probe_results.h file
-if not os.environ.get('SKIP_BUILDSYSTEM_PROBE'):
-    d = prober.probe()
+d = prober.probe()
 
 # Linux & FreeBSD require linking against the realtime libs
 # This causes an error on other platforms
-if "REALTIME_LIB_IS_NEEDED" in d or os.environ.get('LINK_WITH_RT'):
+if "REALTIME_LIB_IS_NEEDED" in d:
     libraries.append("rt")
+elif lib_override:
+    libraries = lib_override.split(' ')
 
 ext_modules = [distutools.Extension("posix_ipc",
                                     source_files,
